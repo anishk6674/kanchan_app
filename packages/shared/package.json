@@ -1,0 +1,14 @@
+{
+  "name": "@kanchan/shared",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "@kanchan/types": "1.0.0",
+    "@kanchan/utils": "1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
