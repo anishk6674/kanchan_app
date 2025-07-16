@@ -5,7 +5,7 @@ const pool = require('../database');
 // GET all customers
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM customers');
+    const [rows] = await pool.query('SELECT * FROM customers ORDER BY name');
     res.json(rows);
   } catch (err) {
     console.error('Error fetching customers:', err);
@@ -95,6 +95,21 @@ router.put('/:id', async (req, res) => {
   } catch (err) {
     console.error('PUT Error Response:', err);
     res.status(500).json({ error: 'Failed to update customer' });
+  }
+});
+
+// DELETE a customer
+router.delete('/:id', async (req, res) => {
+  const customerId = req.params.id;
+  try {
+    const [result] = await pool.query('DELETE FROM customers WHERE customer_id = ?', [customerId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    res.json({ message: 'Customer deleted successfully' });
+  } catch (err) {
+    console.error('DELETE Error Response:', err);
+    res.status(500).json({ error: 'Failed to delete customer' });
   }
 });
 

@@ -1,9 +1,36 @@
-// routes/bills.js
 const express = require('express');
 const router = express.Router();
-const pool = require('../database'); // Directly import the database connection pool
+const pool = require('../database');
 
-// API Route for Saving Monthly Bills
+// GET all bills for a specific month
+router.get('/', async (req, res) => {
+  const { month } = req.query;
+  
+  if (!month) {
+    return res.status(400).json({ error: 'Month parameter (YYYY-MM) is required' });
+  }
+
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        mb.*,
+        c.name,
+        c.phone_number,
+        c.customer_type
+      FROM monthly_bills mb
+      JOIN customers c ON mb.customer_id = c.customer_id
+      WHERE mb.bill_month = ?
+      ORDER BY c.name
+    `, [month]);
+    
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching bills:', error);
+    res.status(500).json({ error: 'Failed to fetch bills' });
+  }
+});
+
+// POST save monthly bills
 router.post('/save-monthly-bills', async (req, res) => {
     const bills = req.body.bills;
 
@@ -11,15 +38,14 @@ router.post('/save-monthly-bills', async (req, res) => {
         return res.status(400).json({ message: 'No bills data provided.' });
     }
 
-    let connection; // Declare connection here so it's accessible in finally block
+    let connection;
     try {
-        connection = await pool.getConnection(); // Get a connection from the pool
-        await connection.beginTransaction(); // Start transaction
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
 
         for (const bill of bills) {
-            // Basic validation - enhance as needed
+            // Basic validation
             if (!bill.customer_id || !bill.bill_month || bill.bill_amount === undefined || bill.total_cans === undefined || bill.delivery_days === undefined) {
-                // It's good to be specific about which bill caused the issue
                 console.error('Skipping bill due to missing data:', bill);
                 throw new Error(`Missing required bill data for one or more entries (customer_id: ${bill.customer_id}, month: ${bill.bill_month}).`);
             }
@@ -42,7 +68,7 @@ router.post('/save-monthly-bills', async (req, res) => {
                     bill_amount = VALUES(bill_amount),
                     total_cans = VALUES(total_cans),
                     delivery_days = VALUES(delivery_days),
-                    created_at = NOW(); -- Update timestamp on update as well
+                    created_at = NOW()
             `;
             const values = [
                 bill.customer_id,
@@ -54,22 +80,62 @@ router.post('/save-monthly-bills', async (req, res) => {
                 bill.delivery_days,
             ];
 
-            await connection.execute(insertOrUpdateQuery, values); // Use execute for prepared statements
+            await connection.execute(insertOrUpdateQuery, values);
         }
 
-        await connection.commit(); // Commit transaction
+        await connection.commit();
         res.status(200).json({ message: 'Bills saved successfully!' });
     } catch (error) {
         if (connection) {
-            await connection.rollback(); // Rollback on error
+            await connection.rollback();
         }
         console.error('Error saving bills to database:', error);
         res.status(500).json({ message: 'Failed to save bills to database.', error: error.message });
     } finally {
         if (connection) {
-            connection.release(); // Release connection back to the pool
+            connection.release();
         }
     }
 });
 
-module.exports = router; // Export the router directly
+// PUT update bill status
+router.put('/:billId/status', async (req, res) => {
+  const { billId } = req.params;
+  const { paid_status, sent_status } = req.body;
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE monthly_bills SET paid_status = ?, sent_status = ? WHERE bill_id = ?',
+      [paid_status, sent_status, billId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    res.json({ message: 'Bill status updated successfully' });
+  } catch (error) {
+    console.error('Error updating bill status:', error);
+    res.status(500).json({ error: 'Failed to update bill status' });
+  }
+});
+
+// DELETE a bill
+router.delete('/:billId', async (req, res) => {
+  const { billId } = req.params;
+
+  try {
+    const [result] = await pool.query('DELETE FROM monthly_bills WHERE bill_id = ?', [billId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    res.json({ message: 'Bill deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting bill:', error);
+    res.status(500).json({ error: 'Failed to delete bill' });
+  }
+});
+
+module.exports = router;

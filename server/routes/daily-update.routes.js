@@ -1,4 +1,3 @@
-// Node.js with Express (example - adapt to your backend framework)
 const express = require('express');
 const router = express.Router();
 const pool = require('../database');
@@ -83,22 +82,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET current holding status for all customers (latest date)
-router.get('/current-status', async (req, res) => {
-  try {
-    const [rows] = await pool.execute(`
-      SELECT c.customer_id, c.name, c.phone_number, c.customer_type, d.holding_status, d.date
-      FROM customers c
-      LEFT JOIN daily_updates d ON c.customer_id = d.customer_id
-      WHERE d.date = (SELECT MAX(date) FROM daily_updates WHERE customer_id = c.customer_id) OR d.date IS NULL
-    `);
-    res.status(200).json(rows);
-  } catch (error) {
-    console.error('Error fetching current holding status:', error);
-    res.status(500).json({ error: 'Failed to fetch current holding status' });
-  }
-});
-
 // GET cans to collect for the next day based on the provided date
 router.get('/next-collection', async (req, res) => {
   const { date } = req.query;
@@ -120,27 +103,6 @@ router.get('/next-collection', async (req, res) => {
   } catch (error) {
     console.error('Error fetching next day collection data:', error);
     res.status(500).json({ error: 'Failed to fetch next day collection data' });
-  }
-});
-
-// Optional: DELETE a daily update by ID (if needed for specific use cases)
-router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [existingUpdate] = await pool.execute(
-      'SELECT update_id FROM daily_updates WHERE update_id = ?',
-      [id]
-    );
-
-    if (existingUpdate.length === 0) {
-      return res.status(404).json({ message: `Daily update with ID ${id} not found` });
-    }
-
-    await pool.execute('DELETE FROM daily_updates WHERE update_id = ?', [id]);
-    res.status(200).json({ message: `Daily update with ID ${id} deleted successfully` });
-  } catch (error) {
-    console.error(`Error deleting daily update with ID ${id}:`, error);
-    res.status(500).json({ error: 'Failed to delete daily update' });
   }
 });
 

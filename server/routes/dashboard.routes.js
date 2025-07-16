@@ -8,33 +8,25 @@ router.get('/', async (req, res) => {
     const [
       [todayOrders],
       [monthlyCustomers],
-     // [shopCustomersReached],
-      [totalShopCustomers],
-     // [totalOrders],
-     // [cansDelivered],
-      //[cansCollected],
+      [shopCustomers],
+      [cansDeliveredToday],
+      [cansCollectedToday],
       [pendingCans],
     ] = await Promise.all([
-      pool.query(" SELECT COUNT(*) AS count FROM orders WHERE order_status = 'pending'"),
+      pool.query("SELECT COUNT(*) AS count FROM orders WHERE DATE(order_date) = CURDATE()"),
       pool.query("SELECT COUNT(*) AS count FROM customers WHERE customer_type = 'monthly'"),
-     // pool.query("SELECT COUNT(*) AS count FROM customers WHERE customer_type = 'shop' AND is_reached = 1"),
       pool.query("SELECT COUNT(*) AS count FROM customers WHERE customer_type = 'shop'"),
-      //pool.query("SELECT COUNT(*) AS count FROM customers WHERE customer_type = 'order'"),
-
-      //pool.query("SELECT IFNULL(SUM(quantity), 0) AS count FROM cans WHERE type = 'delivered' AND DATE(date) = CURDATE()"),
-      //pool.query("SELECT IFNULL(SUM(quantity), 0) AS count FROM cans WHERE type = 'collected' AND DATE(date) = CURDATE()"),
-      pool.query("SELECT SUM(can_qty) AS count from customers"),
+      pool.query("SELECT IFNULL(SUM(delivered_qty), 0) AS count FROM daily_updates WHERE DATE(date) = CURDATE()"),
+      pool.query("SELECT IFNULL(SUM(collected_qty), 0) AS count FROM daily_updates WHERE DATE(date) = CURDATE()"),
+      pool.query("SELECT IFNULL(SUM(holding_status), 0) AS count FROM (SELECT customer_id, holding_status FROM daily_updates WHERE date = (SELECT MAX(date) FROM daily_updates WHERE customer_id = daily_updates.customer_id) GROUP BY customer_id) AS latest_status"),
     ]);
 
     const stats = {
       OrdersTotal: todayOrders[0].count,
       totalMonthlyCustomers: monthlyCustomers[0].count,
-      //shopCustomersReached: shopCustomersReached[0].count,
-      shopCustomersTotal: totalShopCustomers[0].count,
-     // OrdersTotal: totalOrders[0].count,
-      //shopCustomersPercentage: totalShopCustomers[0].count ? ((shopCustomersReached[0].count / totalShopCustomers[0].count) * 100).toFixed(1) + '%' : '0%',
-      //cansDeliveredToday: cansDelivered[0].count,
-      //cansCollectedToday: cansCollected[0].count,
+      shopCustomersTotal: shopCustomers[0].count,
+      cansDeliveredToday: cansDeliveredToday[0].count,
+      cansCollectedToday: cansCollectedToday[0].count,
       pendingCansTotal: pendingCans[0].count,
     };
 

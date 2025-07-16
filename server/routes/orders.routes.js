@@ -1,19 +1,14 @@
-// Node.js with Express
 const express = require('express');
 const router = express.Router();
-const pool = require('../database'); // Assuming you have a database connection pool using mysql2/promise
+const pool = require('../database');
 
 // Middleware to parse JSON request bodies
 router.use(express.json());
 
-// IMPORTANT: Ensure your database table 'orders' has these columns:
-// ALTER TABLE orders ADD COLUMN collected_qty INT DEFAULT 0;
-// ALTER TABLE orders ADD COLUMN collected_date DATE NULL;
-
-// GET all orders (No change)
+// GET all orders
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM orders');
+        const [rows] = await pool.query('SELECT * FROM orders ORDER BY order_date DESC');
         res.status(200).json(rows);
     } catch (error) {
         console.error('Error fetching orders:', error);
@@ -21,7 +16,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET a specific order by ID (No change)
+// GET a specific order by ID
 router.get('/:id', async (req, res) => {
     const orderId = req.params.id;
     try {
@@ -47,7 +42,7 @@ router.post('/', async (req, res) => {
         delivery_amount,
         can_qty,
         collected_qty,
-        collected_date, // Rename to avoid conflict and process it
+        collected_date,
         delivery_date,
         delivery_time,
         order_status,
@@ -58,15 +53,13 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Process collected_date: Convert empty string to null
-    
     const processed_notes = notes === '' ? null : notes;
-
+    const processed_collected_date = collected_date === '' ? null : collected_date;
 
     try {
         const [result] = await pool.query(
             'INSERT INTO orders (order_date, customer_name, customer_phone, customer_address, delivery_amount, can_qty, collected_qty, collected_date, delivery_date, order_status, notes, delivery_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [order_date, customer_name, customer_phone, customer_address, delivery_amount, can_qty, collected_qty || 0, collected_date, delivery_date, order_status, processed_notes, delivery_time]
+            [order_date, customer_name, customer_phone, customer_address, delivery_amount, can_qty, collected_qty || 0, processed_collected_date, delivery_date, order_status, processed_notes, delivery_time]
         );
 
         const newOrderId = result.insertId;
@@ -89,7 +82,7 @@ router.put('/:id', async (req, res) => {
         delivery_amount,
         can_qty,
         collected_qty,
-        collected_date, // Rename to avoid conflict and process it
+        collected_date,
         delivery_date,
         delivery_time,
         order_status,
@@ -102,14 +95,12 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        // Process collected_date: Convert empty string to null
-     
         const processed_notes = notes === '' ? null : notes;
-
+        const processed_collected_date = collected_date === '' ? null : collected_date;
 
         await pool.query(
             'UPDATE orders SET order_date = ?, customer_name = ?, customer_phone = ?, customer_address = ?, delivery_amount = ?, can_qty = ?, collected_qty = ?, collected_date = ?, delivery_date = ?, delivery_time = ?, order_status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [order_date, customer_name, customer_phone, customer_address, delivery_amount, can_qty, collected_qty, collected_date, delivery_date, delivery_time, order_status, processed_notes, orderId]
+            [order_date, customer_name, customer_phone, customer_address, delivery_amount, can_qty, collected_qty, processed_collected_date, delivery_date, delivery_time, order_status, processed_notes, orderId]
         );
 
         const [updatedOrderRows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
@@ -120,7 +111,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE an order by ID (No change)
+// DELETE an order by ID
 router.delete('/:id', async (req, res) => {
     const orderId = req.params.id;
     try {
