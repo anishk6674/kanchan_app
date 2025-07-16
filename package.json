@@ -21,9 +21,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
     "concurrently": "^8.2.2",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.0"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -42,5 +42,11 @@
     "typescript"
   ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "jszip": "^3.10.1"
+  }
 }
