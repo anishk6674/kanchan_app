@@ -1,16 +1,11 @@
 {
-  "name": "server",
+  "name": "kanchan-water-server",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  
-    
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -18,5 +13,7 @@
     "mysql2": "^3.14.1",
     "puppeteer": "^24.10.0"
   },
-  "description": ""
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
 }
