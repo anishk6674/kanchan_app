@@ -45,9 +45,9 @@ kanchan-water-crm/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- MySQL database
-- Expo CLI for mobile development
+- Node.js 18+ ✅
+- MySQL database (optional - will use mock data if not available)
+- Expo CLI for mobile development (for mobile app only)
 
 ### 1. Install Dependencies
 ```bash
@@ -55,17 +55,32 @@ kanchan-water-crm/
 npm run install:all
 ```
 
-### 2. Database Setup
+### 2. Database Setup (Optional)
+
+**Option A: Use Mock Database (Recommended for Quick Start)**
+The app will automatically use mock data if MySQL is not available. No setup required!
+
+**Option B: Setup MySQL Database**
 ```bash
 # Create MySQL database and tables
 # Update apps/server/.env with your database credentials
+
+# Install MySQL if you haven't already:
+# Windows: Download from https://dev.mysql.com/downloads/mysql/
+# Mac: brew install mysql
+# Ubuntu: sudo apt install mysql-server
+
+# Start MySQL service:
+# Windows: Start MySQL service from Services
+# Mac: brew services start mysql
+# Ubuntu: sudo systemctl start mysql
 ```
 
 ### 3. Environment Configuration
 ```bash
 # Copy and configure environment files
-cp apps/server/.env.example apps/server/.env
-cp apps/web/.env.example apps/web/.env
+cp server/.env.example server/.env
+# Update server/.env with your MySQL credentials if using real database
 ```
 
 ### 4. Start Development
